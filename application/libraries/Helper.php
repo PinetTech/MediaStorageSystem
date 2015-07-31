@@ -38,6 +38,14 @@ class Helper
 		return false;
 	}
 
+	public static function generateFilename($prefix, $ext = '.phar')
+	{
+		if (is_writable($prefix)) {
+			return $prefix .'/'. self::hash() .'_'. self::guid() .$ext;
+		}
+		return false;
+	}
+
 	public static function rm($path)
 	{
 		if (is_dir($path)) {
@@ -56,5 +64,37 @@ class Helper
 		else {
 			unlink($path);
 		}
+	}
+
+	public static function prepareDir($dir, $fallback="/tmp", &$errmsg=null)
+	{
+		if ( !$dir && $fallback) {
+			$dir = $fallback;
+		}
+
+		if (is_dir($dir)) {
+			if (! is_writable($dir)) {
+				throw new Exception("destination `{$dir}` not writable");
+			}
+		}
+		else {
+			if (! @mkdir($dir, 0777, true)) {
+				throw new Exception("failed to mkdir `{$dir}`");
+			}
+		}
+
+		return $dir;
+	}
+
+	public static function copy($file, $prefix, $suffix='')
+	{
+		$dest = self::generateFilename($prefix, $suffix);
+		if (! $dest) {
+			throw new Exception("could not create destination file in `{$prefix}`");
+		}
+		if (! copy($file, $dest)) {
+			throw new Exception("failed to copy file `{$file}` into `{$dest}`");
+		}
+		return $dest;
 	}
 }

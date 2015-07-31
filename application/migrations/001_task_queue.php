@@ -20,12 +20,16 @@ class Migration_Task_Queue extends CI_Migration {
 			'create_date' => array(
 				'type' => 'TIMESTAMP'
 			),
-			'try_count' => array(
+			'status' => array(
 				'type' => 'INT',
 				'constraint' => 8,
 				'unsigned' => TRUE
 			),
-			'status' => array(
+			'last_task' => array(
+				'type' => 'INT',
+				'default' => 0,
+			),
+			'try_count' => array(
 				'type' => 'INT',
 				'constraint' => 8,
 				'unsigned' => TRUE

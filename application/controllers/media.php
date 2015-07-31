@@ -3,15 +3,21 @@
 class Media extends CI_Controller {
 	function __construct() {
 		parent::__construct();
-		$this->load->library('KeyValueStore');
-		$this->store = $this->keyvaluestore;
 	}
 
 	public function show() {
 		$args = func_get_args();
 		$id = array_shift($args);
 		$path = implode('/', $args);
-		$phar_path = $this->store->get($id);
+
+		try {
+			$this->load->library('KeyValueStore');
+		}
+		catch (Exception $ex) {
+			show_error($ex->getMessage());
+			return;
+		}
+		$phar_path = $this->keyvaluestore->get($id);
 		if(!$phar_path || ! Phar::isValidPharFilename($phar_path)) {
 			show_404();
 			return;
@@ -29,8 +35,15 @@ class Media extends CI_Controller {
 	}
 
 	public function test() {
-		$this->store->set('111231314-uuid', '/tmp/a.phar');
-		var_dump($this->store->get('test'));
+		try {
+			$this->load->library('KeyValueStore');
+		}
+		catch (Exception $ex) {
+			show_error($ex->getMessage());
+			return;
+		}
+		$this->keyvaluestore->set('111231314-uuid', '/tmp/a.phar');
+		var_dump($this->keyvaluestore->get('test'));
 	}
 
 
@@ -46,9 +59,26 @@ class Media extends CI_Controller {
 	}
 
 
-	public function batch()
+	public function batch($type='prepare')
 	{
-		$this->load->model('mediaprocessor');
-		$this->mediaprocessor->execute();
+		switch ($type) {
+		case 'prepare':
+		case 'segment':
+		case 'publish':
+			$handler = "{$type}handler";
+			require_once APPPATH ."models/{$handler}.php";
+			$queue = 'taskqueue';
+			$this->load->model($queue);
+			$handler = new $handler($this->$queue, $this->config);
+			break;
+		default:
+			return;
+		}
+		$this->load->library('VideoPackage');
+		$this->load->library('Yaml');
+		$this->load->library('Helper');
+
+		$handler->execute();
 	}
+
 }
